@@ -177,6 +177,8 @@ nav button.svc svg{width:30px;height:30px;padding:3px;border-radius:15px;backgro
 @media (prefers-color-scheme:dark){:root:not([data-look=light]) .btn{color:#131711}}
 .btn.sec{background:var(--soft);color:var(--ink)}
 .btn.bad{background:var(--bad-tint);color:var(--bad)}
+:root[data-look=dark] .btn.sec{color:var(--ink)}:root[data-look=dark] .btn.bad{color:var(--bad)}
+@media (prefers-color-scheme:dark){:root:not([data-look=light]) .btn.sec{color:var(--ink)}:root:not([data-look=light]) .btn.bad{color:var(--bad)}}
 .btns{display:flex;gap:10px;flex-wrap:wrap;margin-top:6px}
 .scrim{position:fixed;inset:0;background:rgba(10,14,9,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
 .sheet{background:var(--paper);width:100%;max-width:560px;max-height:92vh;overflow:auto;border-radius:18px 18px 0 0;padding:16px 16px calc(20px + env(safe-area-inset-bottom));
