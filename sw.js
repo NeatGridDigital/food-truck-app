@@ -1,6 +1,6 @@
-// offline cache, version f564f9aabb
-var CACHE = "ftt-f564f9aabb", FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
-self.addEventListener("install", function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES); })); self.skipWaiting(); });
+// offline cache, version 0af8e21a4a
+var CACHE = "ftt-0af8e21a4a", FILES = ["./", "index.html", "manifest.webmanifest", "icon-192.png", "icon-512.png"];
+self.addEventListener("install", function (e) { e.waitUntil(caches.open(CACHE).then(function (c) { return c.addAll(FILES.map(function (f) { return new Request(f, { cache: "reload" }); })); })); self.skipWaiting(); });
 self.addEventListener("activate", function (e) { e.waitUntil(caches.keys().then(function (k) { return Promise.all(k.filter(function (n) { return n !== CACHE; }).map(function (n) { return caches.delete(n); })); })); self.clients.claim(); });
 self.addEventListener("fetch", function (e) {
   if (e.request.method !== "GET") return;

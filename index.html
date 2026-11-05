@@ -212,6 +212,11 @@ table.mini th{font-weight:600;color:var(--muted);font-size:13px}
 .chips svg{width:18px;height:18px;stroke:var(--avo-deep);fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
 .chips button.on{background:var(--ink);color:var(--paper);border-color:var(--ink)}
 .chips button.on svg{stroke:var(--paper)}
+
+.inote{display:flex;align-items:center;gap:10px;background:var(--card);border-radius:14px;padding:10px 8px 10px 14px;margin:0 0 12px;border-left:4px solid var(--sun);box-shadow:var(--shadow)}
+.inote>div{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}.inote b{font-size:15px}.inote span{font-size:13px;color:var(--muted)}
+.inote .btn{flex:none;min-height:38px;padding:8px 14px}
+.inote .ix{flex:none;border:0;background:var(--soft);border-radius:16px;width:32px;height:32px;font-size:17px;line-height:1}
 </style></head>
 <body><div id="app"></div>
 <noscript>This app needs JavaScript turned on.</noscript>
@@ -506,6 +511,20 @@ table.mini th{font-weight:600;color:var(--muted);font-size:13px}
       '<button class="btn sec" data-a="load-sample">Try it with sample data</button></div></div>';
   }
 
+  // ---------------------------------------------------------------- install (per device, kept in localStorage)
+  function flag(k, set) { try { if (set === undefined) localStorage.setItem("ftt-" + k, "1"); return localStorage.getItem("ftt-" + k) === "1"; } catch (e) { return false; } }
+  function standalone() { return (window.matchMedia && matchMedia("(display-mode: standalone)").matches) || window.navigator.standalone; }
+  function installNote() {
+    if (standalone() || flag("installed", null) || flag("noInstall", null)) return "";
+    return '<div class="inote"><div><b>Put the app on your home screen</b><span>Opens like a normal app and works with no signal.</span></div>' +
+      '<button class="btn" data-a="install">Install</button><button class="ix" data-a="no-install" aria-label="Hide">×</button></div>';
+  }
+  function installHelp() {
+    sheet('<h2>Install the app</h2><div class="card"><p style="margin-top:0"><b>On a phone:</b> open the browser menu (three dots or the share button) and choose <b>Add to Home screen</b> or <b>Install app</b>.</p>' +
+      '<p style="margin-bottom:0"><b>On a computer (Chrome or Edge):</b> click the install icon at the right end of the address bar, or the three-dot menu, then <b>Install</b>.</p></div>' +
+      '<div class="btns"><button class="btn" data-a="close-sheet">OK</button></div>');
+  }
+
   // ---------------------------------------------------------------- Home
   function sparkline(vals, labels) {
     var W = 600, H = 120, max = Math.max.apply(null, vals.concat([1])), n = vals.length;
@@ -532,7 +551,7 @@ table.mini th{font-weight:600;color:var(--muted);font-size:13px}
   function renderHome() {
     var D = R.dash, M = R.months, T = S.settings;
     var mlabel = new Date(C.d2n(D.month) * 864e5).toLocaleDateString(undefined, { month: "long", year: "numeric", timeZone: "UTC" });
-    var h = '<section class="board" aria-label="This month"><div class="row1"><div><div class="lab">Sales in ' + esc(mlabel) + ', tax not included</div>' +
+    var h = installNote() + '<section class="board" aria-label="This month"><div class="row1"><div><div class="lab">Sales in ' + esc(mlabel) + ', tax not included</div>' +
       '<div class="big">' + short(D.sales) + '</div></div><div class="side"><div><span class="lab">Profit after all costs</span><b class="' + (D.profit < 0 ? "neg" : "") + '">' + short(D.profit) + "</b></div>" +
       '<div><span class="lab">Events</span><b>' + D.events + "</b></div></div></div>" +
       sparkline(M.map(function (m) { return m.sales; }), M.map(function (m) { return monName(m.start); })) + "</section>";
@@ -797,6 +816,7 @@ table.mini th{font-weight:600;color:var(--muted);font-size:13px}
       '<div class="btns"><button class="btn sec" data-a="csv" data-v="sales">Download Sales as CSV</button></div></div>' +
       '<div class="card" style="margin-top:12px"><h3>Backup</h3><p class="muted small">Save a backup file now and then, and to move to a new phone or computer.</p><div class="btns">' +
       '<button class="btn" data-a="backup">Save a backup file</button><label class="btn sec" style="display:inline-flex;align-items:center">Restore from a file<input type="file" id="restore" accept=".json,application/json" hidden></label></div></div>' +
+      (standalone() ? "" : '<div class="card" style="margin-top:12px"><h3>Install the app</h3><p class="muted small">Put it on your home screen or computer so it opens like a normal app, even with no signal.</p><div class="btns"><button class="btn" data-a="install">Install the app</button></div></div>') +
       '<div class="card" style="margin-top:12px"><h3>Start fresh</h3><div class="btns">' + (S.asOf ? '<button class="btn" data-a="clear-sample">Clear the sample and start my own</button>' : '<button class="btn sec" data-a="load-sample">Load the sample</button>') +
       '<button class="btn bad" data-a="wipe">Delete everything</button></div></div><p class="hint">Made by NeatgridDigital. Your data never leaves this device.</p>';
   }
@@ -864,6 +884,10 @@ table.mini th{font-weight:600;color:var(--muted);font-size:13px}
     else if (a === "copy") { var txt = tsv(v); (navigator.clipboard ? navigator.clipboard.writeText(txt) : Promise.reject()).then(function () { toast("Copied " + S[v].length + " rows"); },
       function () { download(v + ".tsv", txt, "text/tab-separated-values"); }); }
     else if (a === "csv") download("food-truck-" + v + ".csv", csv(v), "text/csv");
+    else if (a === "install") {
+      if (window.__bip) { var bip = window.__bip; window.__bip = null; bip.prompt(); bip.userChoice.then(function (r) { if (r.outcome === "accepted") { flag("installed"); render(); } }); }
+      else installHelp(); }
+    else if (a === "no-install") { flag("noInstall"); view.keep = true; render(); }
     else if (a === "backup") { download("food-truck-backup-" + realToday() + ".json", JSON.stringify(S), "application/json"); toast("Backup saved"); }
   });
   document.addEventListener("keydown", function (ev) {
@@ -909,7 +933,14 @@ table.mini th{font-weight:600;color:var(--muted);font-size:13px}
 
   // ---------------------------------------------------------------- start
   store.get(KEY).then(function (v) { S = v ? Object.assign(clone(DEF), v) : clone(DEF); render(); });
-  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) navigator.serviceWorker.register("sw.js").catch(function () {});
+  window.addEventListener("beforeinstallprompt", function (e) { e.preventDefault(); window.__bip = e; });
+  window.addEventListener("appinstalled", function () { window.__bip = null; flag("installed"); if (S) render(); });
+  // New version: the new worker takes over, then the page reloads once so the update shows straight away.
+  if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+    var hadSW = !!navigator.serviceWorker.controller, reloaded = false;
+    navigator.serviceWorker.addEventListener("controllerchange", function () { if (hadSW && !reloaded) { reloaded = true; location.reload(); } });
+    navigator.serviceWorker.register("sw.js", { updateViaCache: "none" }).then(function (r) { r.update(); }).catch(function () {});
+  }
 })();
 </script>
 </body></html>
